@@ -4,80 +4,112 @@
 ###             LIBRARIES              ###
 
 import re
-import untangle
 
 
 ###           USEFUL FUNCTIONS        ###
 
-def visible(element):
-    '''
-    Visible returns boolean True if text is not under the html/xml tags below.
-    The input is website text (including xml code), and when used with python's
-    filter function, it outputs the visible text in a website '''
+
+# This function converts a list of words into a single string
+def list_to_string(list_of_words):
+    return " ".join(list_of_words)
     
-    if element.parent.name in ['style', 'script', '[document]', 'head', 'title']:
-        return False
-    elif  re.match('.*<!--.*-->.*', str(element), re.DOTALL):
-        return False
-    return True
+# This function matches (and returns) the entire pattern (non-recursively)
+# found in the string
+def extract_patterns1(text_file, list_of_patterns):
 
-
-def xml_to_text(xml_file):
-    text = list(filter(visible, xml_file))
-    if text:
-        # removing newlines and concatenating all text
-        website_text = ' '.join([x for x in website_text if x != '\n'])
-        #website_text = soup.get_text()  #just text, no html or javascript code (hopefully)    
-        # removing further emptyspaces
-        website_text = website_text.replace(" '\n' ", "")
-        website_text = website_text.replace("\n", "")
-        website_text = website_text.replace("    ", "")
+    #extracting strings, mins and maxs from list    
+    a = list_of_patterns[0::3] #list of strings
+    b = list_of_patterns[1::3] #list of mins
+    c = list_of_patterns[2::3] #list of maxs
+    num_strings = len(a)
+    num_mins = len(b)
+    
+    #for debugging
+    if (num_strings) != (num_mins +1):
+        print("Error: Lists are not of same size....")
+    
+    #initializing regex
+    regex = "(" 
+    
+    #extending regex
+    for i in range(num_mins):
+        string1 = a[i]
+        min1 = b[i]
+        max1 = c[i]
+        regex = regex + string1 + ".{" + str(min1) + ',' + str(max1) + '}'   
         
-    if not text:
-        print("\t", xml_file, 'IS EMPTY')
-        text = ""
-    return text
-
-def extract_patterns(text_file, string1, min, max, string2):
-    '''
-    Function Description:
-    S1 [a1, b1] S2 [a2,b2] S3 … [an-1,bn-1] Sn where Sk is a 
-    specific string (for example “dog”) and [ak,bk] matches 
-    any string with at least ak characters and at most bk 
-    characters.
-
-    For example:
-        “cat” [2,4] “hat” will match any string that starts 
-        with “cat”, then has between 2 and 4 characters and 
-        then has “hat”.
+    #closing regex with last string
+    regex = regex + a[num_strings-1] + ")"
         
-        INPUT:  .txt, string, min num of characters after 
-                string, max num of characters after last 
-                letter in string1, the string the pattern 
-                should end with
-        
-        OUTPUT: A list of strings where each element in the
-                list is a match 
-        '''
     #extract pattern 
-    regex = "(" + string1 + ".{" + str(min) + ',' + str(min) + '}' + string2 + ")"
     match = re.findall(regex, text_file, flags=re.I)
     if not match:
         print("The pattern provided is not found in\t", text_file)
     return match
 
+# This function extracts recursively
+def extract_patterns2(text_file, list_of_patterns):
+  
+    #extracting strings, mins and maxs from list    
+    a = list_of_patterns[0::3] #list of strings
+    b = list_of_patterns[1::3] #list of mins
+    c = list_of_patterns[2::3] #list of maxs
+    num_strings = len(a)
+    num_mins = len(b)
+    
+    #for debugging
+    if (num_strings) != (num_mins +1):
+        print("Error: Lists are not of same size....")
+    
+    #initializing regex
+    regex = "(" 
+    
+    #extending regex and searching one pattern at a time (recursively)
+    for i in range(num_mins):
+        string1 = a[i]
+        min1 = b[i]
+        max1 = c[i]
+        regex = regex + string1 + ".{" + str(min1) + ',' + str(max1) + '}' + '.)'
+        match = re.findall(regex, text_file, flags=re.I)
+        #if the 1st pattern is not there, we exit
+        if not match:
+            print("The ", str(i),"st pattern provided is not found in\t", text_file)
+            break
+        #if the 1st pattern exists, we add the second pattern to regex
+        if match:
+            num_chars = len(regex)
+            regex = regex[0:(num_chars-2)]
+        #if it makes it to the end, we add closing string
+        if (i+1) == num_mins:
+            print("Adding last string to pattern")
+            regex = regex + a[num_strings-1] + ")"
+            match = re.findall(regex, text_file, flags=re.I)
+            if not match:
+                print("The global pattern provided is not found in\t", text_file)
+                global_match = [""]
+                break
+            if match:
+                global_match = match
+    return global_match
+
+        
 
 
 
 ###         SOLVING CHALLENGE          ###
 
-# Uploading xml file 
-xml_file = untangle.parse('wiki_example.xml')
+# Putting wikipedia article into a string
+article_text = list_to_string(l2)
 
-# Extracting text
-text = xml_to_text(xml_file)
+# Define the pattern to search here
+list_of_patterns = ["duncan", 1, 25, "refer", 1, 10, "henry"]
 
 # Extracting pattern
-result = extract_patterns(text, "cat", 2, 4, "hat")
-print(result[0])
+pattern0 = extract_patterns1(l3, list_of_patterns)
+pattern1 = extract_patterns2(l3, list_of_patterns)
+
+
+
+
+
 
