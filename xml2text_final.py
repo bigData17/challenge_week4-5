@@ -105,21 +105,21 @@ def searchABC(t_list):
         # if 1st letter does not match 1st key, we skip to the next key     
         if t_list[i][0] != a[j]:
             not_found.append(str(a[j]))
-            j= j +1  ; print("First if block: i=", i, "j=", j)          
+            j= j +1  ; #print("First if block: i=", i, "j=", j)          
             
         # if 1st letter matches key, we store (start, end) index in values, and
         # we skip to the next title in the list
         if t_list[i][0] == a[j]:
             start = i; end = i
             while (t_list[i][0] == a[j]) and (i <= num_i-1):
-                print("Second if block (inside while) : i=", i, "j=", j, "end= ", end)
+                #print("Second if block (inside while) : i=", i, "j=", j, "end= ", end)
                 end = end +1
                 i = i +1; 
                 if i == (num_i -1):
                     print("Finished iterating over titles list")
                     break;
             dict1[str(a[j])] = (start,end)
-            j = j +1; print("Second if block (outside while): i=", i, "j=", j)
+            j = j +1; #print("Second if block (outside while): i=", i, "j=", j)
             
         if i == (num_i -1):
             break;
@@ -131,7 +131,7 @@ def searchABC(t_list):
         if (i <= num_i) and (j == num_j):
             for k in range(i, num_i):
                 special_characters.append(t_list[k][0])
-                print("Fourth if block: i=", i, "j=", j)
+                #print("Fourth if block: i=", i, "j=", j)
             print("The following characters were not binned in dictionary: \n\t", special_characters)
     return dict1, not_found, special_characters
             
