@@ -95,7 +95,9 @@ def searchABC(t_list):
     a dictionary of keys: "character to search", values: "index of where to find them"
     INPUT: Alphabetically sorted list
     OUPUT: Dictionary, for example:
-            {'A' : 0:15, 'B' : 16:20, .... 'Z' : 450:500}
+            {'A' : 0,15, 'B' : 16,20, .... 'Z' : 450,500}
+            note: the last entry 'Z' in the dictionary will be 450,500, but it should be
+                  to 501. i.e., it should be +1
     '''
     import string
     a =  string.punctuation + string.digits + string.ascii_lowercase 
@@ -118,7 +120,7 @@ def searchABC(t_list):
                 if i == (num_i -1):
                     print("Finished iterating over titles list")
                     break;
-            dict1[str(a[j])] = (start,end)
+            dict1[str(a[j])] = (start,end-1)
             j = j +1; #print("Second if block (outside while): i=", i, "j=", j)
             
         if i == (num_i -1):
