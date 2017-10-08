@@ -69,16 +69,56 @@ def check_length(list1, list2):
         print("ERROR: Length of List1 and List2 is not the same: ", num_t, ":", num_a)
     if num_t == num_a:
         print("SUCCESS: Both lists are of same length")
+        
+        
+def sortABC(titles_list, articles_list):
+    '''
+    Description: sorts titles_list alphabetically, then uses that index to sort
+    the articles_list.
+        INPUT: Two lists of same length: titles_list and articles_list
+        OUTPUT: Tuple of 3 lists: titles_list_sorted, articles_list_sorted, index_used
+    '''
+    a = titles_list; b = articles_list; 
+    sort_idx = sorted(range(len(a)), key=lambda k: a[k])
+    return sorted(a), [b[i] for i in sort_idx], sort_idx
 
-
-
-
+def searchABC(t_list):
+    '''
+    Description: takes an alphabetically sorted list of titles, and creates
+    a dictionary of keys: "character to search", values: "index of where to find them"
+    INPUT: Alphabetically sorted list
+    OUPUT: Dictionary, for example:
+            {'A' : 0:15, 'B' : 16:20, .... 'Z' : 450:500}
+    '''
+    import string
+    a =  string.punctuation + string.ascii_lowercase 
+    dict1 = {}; num_i = len(t_list); num_j = len(a) 
+    i = 0; j = 0; not_found = []         
+    while (i < num_i) & (j < num_j):
+        # if 1st letter does not match 1st key, we skip to the next key     
+        if t_list[i][0] != a[j]:
+            not_found.append(str(a[j]))
+            j= j +1            
+            
+        # if 1st letter matches key, we store (start, end) index in values, and
+        # we skip to the next title in the list
+        if t_list[i][0] == a[j]:
+            start = i; end = i
+            while t_list[i][0] == a[j]:
+                end = end +1
+                i = i +1
+            dict1[str(a[j])] = (start,end-1)
+            j = j +1
+    return dict1 
+            
+            
+   
 ### _____________ main _____________ ###
 
 
 # Extracting targets from XML file
-titles = xml2soup("split1.xml", 'title')
-articles = xml2soup("split1.xml", 'text')
+titles = xml2soup("wiki_sample", 'title')
+articles = xml2soup("wiki_sample", 'text')
 
 # Preprocessing data and storing in lists
 t_list = soup2list(titles)
@@ -88,14 +128,20 @@ a_list = soup2list(articles)
 check_length(t_list, a_list)
 
 # Removing redirects
-a_list_updated, keep_idx, _ = remove_redirects(a_list)
+a_list, keep_idx, _ = remove_redirects(a_list)
 
 # Removing redirects from titles using index from articles
-t_list_updated = [t_list[i] for i in keep_idx]
+t_list = [t_list[i] for i in keep_idx]
 
 # Debugging
-check_length(t_list_updated, a_list_updated)
+check_length(t_list, a_list)
+
+# Reogranizing entries alphabetically
+#t_list, a_list, sort_idx = sortABC(t_list, a_list)
+
+# Creating dict with search index as tuple (Currently being debugged)
+#dict1 = searchABC(t_list)
 
 # Storing data as txt files 
-list2txt('wiki_astext.txt', a_list_updated)
-list2txt('titles_astext.txt', t_list_updated)
+list2txt('wiki_astext.txt', a_list)
+list2txt('titles_astext.txt', t_list)
