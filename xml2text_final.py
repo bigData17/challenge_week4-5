@@ -91,10 +91,10 @@ def searchABC(t_list):
             {'A' : 0:15, 'B' : 16:20, .... 'Z' : 450:500}
     '''
     import string
-    a =  string.punctuation + string.ascii_lowercase 
+    a =  string.punctuation + string.digits + string.ascii_lowercase 
     dict1 = {}; num_i = len(t_list); num_j = len(a) 
-    i = 0; j = 0; not_found = []         
-    while (i < num_i) & (j < num_j):
+    i = 0; j = 0; not_found = []; special_characters = []     
+    while (i < num_i) and (j < num_j):
         # if 1st letter does not match 1st key, we skip to the next key     
         if t_list[i][0] != a[j]:
             not_found.append(str(a[j]))
@@ -109,10 +109,20 @@ def searchABC(t_list):
                 i = i +1
             dict1[str(a[j])] = (start,end-1)
             j = j +1
-    return dict1 
+            
+        if (i == num_i) and (j < num_j):
+            print("ERROR: Character ", str(a[j]), "is not found in string list privided:\n\t", str(a))
+        
+        if (i <= num_i) and (j == num_j):
+            for k in range(i, num_i):
+                special_characters.append(t_list[k])
+    return dict1, not_found, special_characters
             
             
-   
+    
+    
+
+
 ### _____________ main _____________ ###
 
 
@@ -137,11 +147,14 @@ t_list = [t_list[i] for i in keep_idx]
 check_length(t_list, a_list)
 
 # Reogranizing entries alphabetically
-#t_list, a_list, sort_idx = sortABC(t_list, a_list)
+t_list, a_list, sort_idx = sortABC(t_list, a_list)
 
 # Creating dict with search index as tuple (Currently being debugged)
-#dict1 = searchABC(t_list)
+# not_found is a list of characters which were not found in the 1st letter
+# of the title for all titles found in the xml file provided
+dict1, not_found, special_characters = searchABC(t_list)
 
 # Storing data as txt files 
 list2txt('wiki_astext.txt', a_list)
 list2txt('titles_astext.txt', t_list)
+
