@@ -1,19 +1,26 @@
 ### ____________ useful functions ____________ ###
 
 
-def xml2soup(xmlfile, tag):
+def xml2soup(xmlfile, tag1, tag2):
     '''
     Description: finds tag instances in an xml file and outputs
     BeautifulSoup objects containing all instances found.
-        INPUT: Xml file, tag (both as strings, ex: "split1.xml", "titles")
-        OUTPUT: BeautifulSoup object with tag matches 
+        INPUT: Xml file, tag1 = titles, tag2 = articles/text
+                (both as strings, ex: "split1.xml", "title", "text")
+        OUTPUT: Two lists of BeautifulSoup objects with respective tag matches 
     '''
     from bs4 import BeautifulSoup
     #The line below works for Python 3, let me know if in Python 2 it doesn't work
     infile = open(xmlfile,"r", encoding='utf8')
     contents = infile.read()
     soup = BeautifulSoup(contents,'xml')
-    return soup.find_all(tag)
+    list_of_titlesoups = []; list_of_articlesoups = []
+    #grabbing only articles (aka entries where namespace = 0)
+    for entry in soup.find_all('page'):
+        if entry.ns.string == '0':
+            list_of_titlesoups.append(entry.find(tag1))
+            list_of_articlesoups.append(entry.find(tag2))
+    return list_of_titlesoups, list_of_articlesoups #soup.find_all(tag)
 
     
 def soup2list(object):   
@@ -21,8 +28,8 @@ def soup2list(object):
     Description: creates a list from soup object, where each element in the list
     corresponds to different tag instances, and where the instances are cleaned:
     they are all converted to lowercase and linebreaks are removed.
-        INPUT: BeautifulSoup object
-        OUPUT: List. Each element is a different instace in the object
+        INPUT: List of BeautifulSoup objects
+        OUPUT: List. Each element is a different instance in the object
     '''
     return [object[i].get_text().lower().replace('\n', ' ').replace('\r', '') for i in range(0, len(object))]
 
@@ -40,7 +47,7 @@ def remove_redirects(mylist):
     for i in range(num):
         # [ ] Elaborate condition more such that it only skips true redirects and not articles
         # that may contain by chance the string #redirect
-        if "#redirect" in mylist[i]:  
+        if "#redirect" in mylist[i][0:20]:  
             rm_idx.append(i)
         else:
             keep_idx.append(i)
@@ -98,24 +105,32 @@ def searchABC(t_list):
         # if 1st letter does not match 1st key, we skip to the next key     
         if t_list[i][0] != a[j]:
             not_found.append(str(a[j]))
-            j= j +1            
+            j= j +1  ; print("First if block: i=", i, "j=", j)          
             
         # if 1st letter matches key, we store (start, end) index in values, and
         # we skip to the next title in the list
         if t_list[i][0] == a[j]:
             start = i; end = i
-            while t_list[i][0] == a[j]:
+            while (t_list[i][0] == a[j]) and (i <= num_i-1):
+                print("Second if block (inside while) : i=", i, "j=", j, "end= ", end)
                 end = end +1
-                i = i +1
+                i = i +1; 
+                if i == (num_i -1):
+                    print("Finished iterating over titles list")
+                    break;
             dict1[str(a[j])] = (start,end-1)
-            j = j +1
+            j = j +1; print("Second if block (outside while): i=", i, "j=", j)
             
+        # if there are titles that start with a letter/character that is not found in a list     
         if (i == num_i) and (j < num_j):
             print("ERROR: Character ", str(a[j]), "is not found in string list privided:\n\t", str(a))
-        
+            print("Third if block: i=", i, "j=", j)
+            
         if (i <= num_i) and (j == num_j):
             for k in range(i, num_i):
-                special_characters.append(t_list[k])
+                special_characters.append(t_list[k][0])
+                print("Fourth if block: i=", i, "j=", j)
+            print("The following characters were not binned in dictionary: \n\t", special_characters)
     return dict1, not_found, special_characters
             
             
@@ -127,8 +142,7 @@ def searchABC(t_list):
 
 
 # Extracting targets from XML file
-titles = xml2soup("wiki_sample", 'title')
-articles = xml2soup("wiki_sample", 'text')
+titles, articles = xml2soup("split1.xml", 'title', 'text')
 
 # Preprocessing data and storing in lists
 t_list = soup2list(titles)
@@ -138,10 +152,10 @@ a_list = soup2list(articles)
 check_length(t_list, a_list)
 
 # Removing redirects
-a_list, keep_idx, _ = remove_redirects(a_list)
+#a_list, keep_idx, _ = remove_redirects(a_list)
 
 # Removing redirects from titles using index from articles
-t_list = [t_list[i] for i in keep_idx]
+#t_list = [t_list[i] for i in keep_idx]
 
 # Debugging
 check_length(t_list, a_list)
@@ -152,9 +166,8 @@ t_list, a_list, sort_idx = sortABC(t_list, a_list)
 # Creating dict with search index as tuple (Currently being debugged)
 # not_found is a list of characters which were not found in the 1st letter
 # of the title for all titles found in the xml file provided
-dict1, not_found, special_characters = searchABC(t_list)
+#dict1, not_found, special_characters = searchABC(t_list)
 
 # Storing data as txt files 
 list2txt('wiki_astext.txt', a_list)
 list2txt('titles_astext.txt', t_list)
-
