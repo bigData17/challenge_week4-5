@@ -95,9 +95,7 @@ def searchABC(t_list):
     a dictionary of keys: "character to search", values: "index of where to find them"
     INPUT: Alphabetically sorted list
     OUPUT: Dictionary, for example:
-            {'A' : 0,15, 'B' : 16,20, .... 'Z' : 450,500}
-            note: the last entry 'Z' in the dictionary will be 450,500, but it should be
-                  to 501. i.e., it should be +1
+            {'A' : 0:15, 'B' : 16:20, .... 'Z' : 450:500}
     '''
     import string
     a =  string.punctuation + string.digits + string.ascii_lowercase 
@@ -137,8 +135,46 @@ def searchABC(t_list):
             print("The following characters were not binned in dictionary: \n\t", special_characters)
     return dict1, not_found, special_characters
             
-            
+
+def list2bagofwords(a_list):
+    '''
+    INPUT: list of all articles in entire wiki xml file
+    OUTPUT: List where each element is a bag of words (a set) for each article 
+    '''
+    import collections, re
+    bagsofwords = [ collections.Counter(re.findall(r'\w+', txt)) for txt in a_list]
+    temp = [bagsofwords[i].keys() for i in range(len(bagsofwords))]
+    return [set(temp[i]) for i in range(len(bagsofwords))]
+
+def wiki2bagofwords(wiki_string):
+    '''
+    INPUT: One string that captures the entire wiki file
+    OUTPUT: a set of words (bag of words) of that entire wiki file
+    '''
+    import collections, re
+    return {collections.Counter(re.findall(r'\w+', wiki_string))}
+
     
+def which_lines(list_keywords, list_baos): #still debugging
+    '''
+    INPUT: list of keywords in pattern, entire wiki bag of words, list where each 
+        element is an article's bag of words  
+    OUTPUT: a list contatining the index of lines in the .txt file that contain
+        the pattern keywords
+    '''
+    index = []
+    for i in range(len(list_baos)):
+        if list_keywords[0] in list_baos and list_keywords[1] in list_baos and list_keywords[3] in list_baos:
+            index.append(i)
+    return index
+
+
+def smart_search(lines_index, a_list):
+    '''
+    INPUT: lines_index list (output from which_lines), and processed articles_list
+    OUPUT: subset of a_list containing only articles which contain the keywords in pattern to search
+    '''
+    return [a_list[i] for i in lines_index]
     
 
 
@@ -156,10 +192,10 @@ a_list = soup2list(articles)
 check_length(t_list, a_list)
 
 # Removing redirects
-#a_list, keep_idx, _ = remove_redirects(a_list)
+a_list, keep_idx, _ = remove_redirects(a_list)
 
 # Removing redirects from titles using index from articles
-#t_list = [t_list[i] for i in keep_idx]
+t_list = [t_list[i] for i in keep_idx]
 
 # Debugging
 check_length(t_list, a_list)
@@ -167,7 +203,16 @@ check_length(t_list, a_list)
 # Reogranizing entries alphabetically
 t_list, a_list, sort_idx = sortABC(t_list, a_list)
 
-# Creating dict with search index as tuple
+# Creating a BAO (bag of words) for each article
+list_of_baos = list2bagofwords(a_list)
+
+# Finding the index of lines to search in
+lines_index = which_lines(["the", "going", "for"], list_of_baos)
+
+# Creating a reduced list of only articles that contain the pattern keywords
+smart_articles_list = smart_search(lines_index, a_list)
+
+# Creating dict with search index as tuple (Currently being debugged)
 # not_found is a list of characters which were not found in the 1st letter
 # of the title for all titles found in the xml file provided
 dict1, not_found, special_characters = searchABC(t_list)
