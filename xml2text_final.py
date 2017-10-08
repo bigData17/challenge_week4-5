@@ -118,9 +118,11 @@ def searchABC(t_list):
                 if i == (num_i -1):
                     print("Finished iterating over titles list")
                     break;
-            dict1[str(a[j])] = (start,end-1)
+            dict1[str(a[j])] = (start,end)
             j = j +1; print("Second if block (outside while): i=", i, "j=", j)
             
+        if i == (num_i -1):
+            break;
         # if there are titles that start with a letter/character that is not found in a list     
         if (i == num_i) and (j < num_j):
             print("ERROR: Character ", str(a[j]), "is not found in string list privided:\n\t", str(a))
@@ -142,7 +144,7 @@ def searchABC(t_list):
 
 
 # Extracting targets from XML file
-titles, articles = xml2soup("split1.xml", 'title', 'text')
+titles, articles = xml2soup("wiki_sample", 'title', 'text')
 
 # Preprocessing data and storing in lists
 t_list = soup2list(titles)
@@ -163,11 +165,12 @@ check_length(t_list, a_list)
 # Reogranizing entries alphabetically
 t_list, a_list, sort_idx = sortABC(t_list, a_list)
 
-# Creating dict with search index as tuple (Currently being debugged)
+# Creating dict with search index as tuple
 # not_found is a list of characters which were not found in the 1st letter
 # of the title for all titles found in the xml file provided
-#dict1, not_found, special_characters = searchABC(t_list)
+dict1, not_found, special_characters = searchABC(t_list)
 
 # Storing data as txt files 
 list2txt('wiki_astext.txt', a_list)
 list2txt('titles_astext.txt', t_list)
+
