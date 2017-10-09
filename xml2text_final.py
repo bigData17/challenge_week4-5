@@ -87,6 +87,7 @@ def sortABC(titles_list, articles_list):
     '''
     a = titles_list; b = articles_list; 
     sort_idx = sorted(range(len(a)), key=lambda k: a[k])
+    print("SORT_ABC: SUCCESS: Titles list has been sorted alphanumerically")
     return sorted(a), [b[i] for i in sort_idx], sort_idx
 
 def searchABC(t_list):
@@ -113,26 +114,31 @@ def searchABC(t_list):
             start = i; end = i
             while (t_list[i][0] == a[j]) and (i <= num_i-1):
                 #print("Second if block (inside while) : i=", i, "j=", j, "end= ", end)
+                if i == (num_i -1):
+                    print("SEARCH_ABC: 1Finished iterating over titles list")
+                    break;
                 end = end +1
                 i = i +1; 
-                if i == (num_i -1):
-                    print("Finished iterating over titles list")
-                    break;
+
             dict1[str(a[j])] = (start,end-1)
             j = j +1; #print("Second if block (outside while): i=", i, "j=", j)
             
         if i == (num_i -1):
+            print("SEARCH_ABC: 2Finished iterating over titles list")
             break;
         # if there are titles that start with a letter/character that is not found in a list     
         if (i == num_i) and (j < num_j):
-            print("ERROR: Character ", str(a[j]), "is not found in string list privided:\n\t", str(a))
+            print("SEARCH_ABC: ERROR: Character ", str(a[j]), "is not found in string list privided:\n\t", str(a))
             print("Third if block: i=", i, "j=", j)
             
         if (i <= num_i) and (j == num_j):
             for k in range(i, num_i):
                 special_characters.append(t_list[k][0])
                 #print("Fourth if block: i=", i, "j=", j)
-            print("The following characters were not binned in dictionary: \n\t", special_characters)
+            print("SEARCH_ABC: The following characters were not binned in dictionary: \n\t", special_characters)
+            print("SEARCH_ABC: 3Finished iterating over titles list")
+            
+    print("SEARCH_ABC: Last check: i=", i, "num_i= ", num_i, "j=", j, "num_j=", num_j)
     return dict1, not_found, special_characters
             
 
@@ -164,8 +170,12 @@ def which_lines(list_keywords, list_baos): #still debugging
     '''
     index = []
     for i in range(len(list_baos)):
-        if list_keywords[0] in list_baos and list_keywords[1] in list_baos and list_keywords[3] in list_baos:
+        if list_keywords[0] in list_baos[i] and list_keywords[1] in list_baos[i] and list_keywords[2] in list_baos[i]:
             index.append(i)
+    if not index:
+        print("WHICH_LINES: The keywords provided were not found in any of the lines in", list_baos)
+    else:
+        print("WHICH_LINES: The keywords provided were found in ", len(index), "lines: \n\tLines:", index)
     return index
 
 
@@ -175,11 +185,63 @@ def smart_search(lines_index, a_list):
     OUPUT: subset of a_list containing only articles which contain the keywords in pattern to search
     '''
     return [a_list[i] for i in lines_index]
+
+
+def extract_patterns(smart_list, list_of_patterns): #text_file
+    '''
+    Description: This matches (and returns) the entire pattern provided (non-recursively)
+    found in the string provided
+    INPUT: string, a list whose elements are the patterns to search for in string
+    OUPUT: a list of unique matches found
+    TO DO:
+        [x] Make it accept a list of strings
+        [] Make it returns matches within matches, [x]and return only unique matches
+        [] Change the list_of_patterns to match exactly as in the gdoc "str1" "[1,5]" "str2"
+    '''
+    #regex library
+    import re
+    
+    #extracting strings, mins and maxs from list    
+    a = list_of_patterns[0::3] #list of strings
+    b = list_of_patterns[1::3] #list of mins
+    c = list_of_patterns[2::3] #list of maxs
+    num_strings = len(a)
+    num_mins = len(b)
+    
+    #for debugging
+    if (num_strings) != (num_mins +1):
+        print("Error: Lists are not of same size....")
+    
+    #initializing regex
+    regex = "(" 
+    
+    #extending regex
+    for i in range(num_mins):
+        string1 = a[i]
+        min1 = b[i]
+        max1 = c[i]
+        regex = regex + string1 + ".{" + str(min1) + ',' + str(max1) + '}'   
+        
+    #closing regex with last string
+    regex = regex + a[num_strings-1] + ")"
+        
+    #extract pattern
+    match_list = []
+    for i in range(0, len(smart_list)):
+       current_match = re.findall(regex, smart_list[i], flags=re.I)
+       if current_match:
+           match_list.append(set(current_match))
+           
+    if not match_list:
+        print("EXTRACT_PATTERNS: The pattern provided is not found in list of articles provided")
+    return match_list
     
 
 
 ### _____________ main _____________ ###
 
+
+############ PREPROCESSING DATA #########################
 
 # Extracting targets from XML file
 titles, articles = xml2soup("wiki_sample", 'title', 'text')
@@ -203,21 +265,48 @@ check_length(t_list, a_list)
 # Reogranizing entries alphabetically
 t_list, a_list, sort_idx = sortABC(t_list, a_list)
 
-# Creating a BAO (bag of words) for each article
-list_of_baos = list2bagofwords(a_list)
-
-# Finding the index of lines to search in
-lines_index = which_lines(["the", "going", "for"], list_of_baos)
-
-# Creating a reduced list of only articles that contain the pattern keywords
-smart_articles_list = smart_search(lines_index, a_list)
-
 # Creating dict with search index as tuple (Currently being debugged)
 # not_found is a list of characters which were not found in the 1st letter
 # of the title for all titles found in the xml file provided
 dict1, not_found, special_characters = searchABC(t_list)
 
+# Creating a BAO (bag of words) for each article
+list_of_baos = list2bagofwords(a_list)
+
+
+
+############   QUERY TIME   #############################
+
+# Enter the keywords you would like to search on wiki below:
+keywords = ["the", "going", "on"]
+
+# Define the pattern to search here
+list_of_patterns = ["the", 1, 25, "going", 1, 10, "on"]
+
+# Finding the index of lines (which articles) that contain those words
+lines_index = which_lines(keywords, list_of_baos)
+
+# Creating a reduced list of only articles that contain the pattern keywords
+smart_articles_list = smart_search(lines_index, a_list)
+'''
+Optimization Note: The above can be optimized using cython. Instead of creating a subset of
+the original file, we can simply create an array of pointers that point
+to those lines, hence more memory efficient and faster. '''
+
+
 # Storing data as txt files 
-list2txt('wiki_astext.txt', a_list)
-list2txt('titles_astext.txt', t_list)
+#list2txt('wiki_astext.txt', smart_articles_list)
+#list2txt('titles_astext.txt', t_list)
+'''
+Optimization Note: The above could be optimized if we completely skipt it. That is,
+instead of converting to txt file, we could simply feed the regex functions a list of 
+strings to iterate over. Also, I'm not sure if converting to t_list to txt is necessary'''
+
+
+# Extracting matches
+patterns = extract_patterns(smart_articles_list, list_of_patterns)
+print(patterns)
+
+
+
 
