@@ -195,11 +195,11 @@ def extract_patterns(smart_list, list_of_patterns): #text_file
     OUPUT: a list of unique matches found
     TO DO:
         [x] Make it accept a list of strings
-        [] Make it returns matches within matches, [x]and return only unique matches
+        [x] Make it returns matches within matches, and return only unique matches
         [] Change the list_of_patterns to match exactly as in the gdoc "str1" "[1,5]" "str2"
     '''
     #regex library
-    import re
+    import regex as re #import re
     
     #extracting strings, mins and maxs from list    
     a = list_of_patterns[0::3] #list of strings
@@ -226,11 +226,13 @@ def extract_patterns(smart_list, list_of_patterns): #text_file
     regex = regex + a[num_strings-1] + ")"
         
     #extract pattern
+    #match = re.findall(regex, text_file, flags=re.I)
+    #match = [ re.findall(regex, smart_list[i], flags=re.I) for i in range(0, len(smart_list))]
     match_list = []
     for i in range(0, len(smart_list)):
-       current_match = re.findall(regex, smart_list[i], flags=re.I)
+       current_match = re.findall(regex, smart_list[i], flags=re.I, overlapped=True)
        if current_match:
-           match_list.append(set(current_match))
+           match_list.append(set(current_match)) 
            
     if not match_list:
         print("EXTRACT_PATTERNS: The pattern provided is not found in list of articles provided")
