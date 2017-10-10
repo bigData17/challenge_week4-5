@@ -34,6 +34,39 @@ def soup2list(object):
     return [object[i].get_text().lower().replace('\n', ' ').replace('\r', '') for i in range(0, len(object))]
 
 
+def find_badlines(articles_txtfile, namespace_txtfile):
+    '''
+    INPUT: Text files from wiki
+    OUTPUT: list of lines that should be removed
+    '''
+    bad_redirects = []
+    bad_namespaces = []
+    with open(namespace_txtfile) as ns, open(articles_txtfile) as articles:
+        for i, line in enumerate(articles):
+            if '#REDIRECT' in line:
+                bad_redirects.append(i)
+        for i, line in enumerate(ns):
+            if '0' not in line:
+                bad_namespaces.append(i)
+
+    ns.close(); articles.close()
+    return list(sorted(set(bad_redirects + bad_namespaces)))
+
+
+def remove_badlines(badlines_list, articles_txtfile, new_txtfilename):
+    '''
+    INPUT: List of bad lines, txt file with bad lines to be removed, name of new updated file
+    OUPUT: txt files without bad lines 
+    '''
+    new_file = open(new_txtfilename, 'w')
+    with open(articles_txtfile) as articles:
+        for i, line in enumerate(articles):
+            if i not in badlines_list:
+                new_file.write('%s\n' % line.lower().replace('\n', ' ').replace('\r', ''))
+    new_file.close()
+    articles.close()
+                
+
 def remove_redirects(mylist):
     '''
     Description: removes redirect wiki entries from the list provided
@@ -67,7 +100,12 @@ def list2txt(filename, mylist):
         for s in mylist:
             f.write("%s\n" % s)
     f.close()
-
+    
+    
+def txt2list(filename):
+    txt_file = open(filename, 'r', encoding='utf-8')
+    return [line.lower().replace('\n', ' ').replace('\r', '') for line in txt_file.readlines()]
+        
 
 def check_length(list1, list2):
     # Debugging: we should have the same number of articles and titles
@@ -152,6 +190,35 @@ def list2bagofwords(a_list):
     temp = [bagsofwords[i].keys() for i in range(len(bagsofwords))]
     return [set(temp[i]) for i in range(len(bagsofwords))]
 
+def BAO_as_txtfile(articles_txtfile, new_txtfilename):
+    '''
+    INPUT: articles_txtfile, where each line is a cleaned wiki article, name of bao_txt file 
+    OUTPUT: bag of words txt file, where each line contains the set of words
+            found in that article
+    '''
+    new_file = open(new_txtfilename, 'w')
+    with open(articles_txtfile) as articles:
+        for i, line in enumerate(articles):
+            new_file.write('%s\n' % " ".join(set(line.split())))
+    new_file.close()
+    articles.close()
+    
+def which_lines_sequential(articles_txtfile, bao_txtfile, keywords_list):
+    '''
+    '''
+    with open(articles_txtfile) as articles, open(bao_txtfile) as bao:
+        for i, line in enumerate(articles):
+            if bao.readline(i) in line:
+                #find with regex or unix command
+                print(i, 'it worked')
+            else:
+                print(i, 'its not in article line')
+            if not bao.readline(i):
+                print(i, "It's empty?", "\t", bao.readline(i))
+            
+    bao.close()
+    articles.close()    
+
 def wiki2bagofwords(wiki_string):
     '''
     INPUT: One string that captures the entire wiki file
@@ -191,7 +258,7 @@ def extract_patterns(smart_list, list_of_patterns): #text_file
     '''
     Description: This matches (and returns) the entire pattern provided (non-recursively)
     found in the string provided
-    INPUT: string, a list whose elements are the patterns to search for in string
+    INPUT: a list of strings, a list whose elements are the patterns to search for in string
     OUPUT: a list of unique matches found
     TO DO:
         [x] Make it accept a list of strings
@@ -239,12 +306,46 @@ def extract_patterns(smart_list, list_of_patterns): #text_file
     return match_list
     
 
+def extract_patterns_dirty(text_file, list_of_patterns):
+    import regex as re
+    #extracting strings, mins and maxs from list    
+    a = list_of_patterns[0::3] #list of strings
+    b = list_of_patterns[1::3] #list of mins
+    c = list_of_patterns[2::3] #list of maxs
+    num_strings = len(a)
+    num_mins = len(b)
+    
+    #for debugging
+    if (num_strings) != (num_mins +1):
+        print("Error: Lists are not of same size....")
+    
+    #initializing regex
+    regex = "(" 
+    
+    #extending regex
+    for i in range(num_mins):
+        string1 = a[i]
+        min1 = b[i]
+        max1 = c[i]
+        regex = regex + string1 + ".{" + str(min1) + ',' + str(max1) + '}'   
+        
+    #closing regex with last string
+    regex = regex + a[num_strings-1] + ")"
+        
+    #extract pattern 
+    match = re.findall(regex, text_file, flags=re.I, overlapped=True)
+    for i in range(0, len(match)):
+        match[i] = list(set(match[i]))
+    if not match:
+        print("The pattern provided is not found in the string/xml file provided")
+    return match
+
 
 ### _____________ main _____________ ###
 
 
 ############ PREPROCESSING DATA #########################
-
+'''
 # Extracting targets from XML file
 titles, articles = xml2soup("wiki_sample", 'title', 'text')
 
@@ -274,6 +375,25 @@ dict1, not_found, special_characters = searchABC(t_list)
 
 # Creating a BAO (bag of words) for each article
 list_of_baos = list2bagofwords(a_list)
+'''
+
+# Opening text files and finding bad lines sequentially
+badlines_list = find_badlines('articles.txt', 'namespaces.txt')
+
+# Removing bad lines from 'articles.txt' and 'titles.txt' sequentially
+remove_badlines(badlines_list, 'articles.txt', 'articles_updated.txt')
+remove_badlines(badlines_list, 'titles.txt', 'titles_updated.txt')
+
+
+### METHOD 1: Bag of Words ###
+# Creating BAO txt file
+BAO_as_txtfile('articles_updated.txt', 'bao.txt')
+
+# Finding which lines contain the keywords and implementing regex func on them 
+keywords_list = ['anarchism', 'political']
+which_lines_sequential('articles_updated.txt', 'bao.txt', keywords_list) #debug function
+
+### 
 
 
 
@@ -305,9 +425,18 @@ instead of converting to txt file, we could simply feed the regex functions a li
 strings to iterate over. Also, I'm not sure if converting to t_list to txt is necessary'''
 
 
-# Extracting matches
+# Extracting matches from clean data
 patterns = extract_patterns(smart_articles_list, list_of_patterns)
 print(patterns)
+
+
+########### DO WE GET THE SAME RESULTS AS IN VALIDATION SET ###############
+
+# Creating big xml file to 
+
+# Extracting matches from dirty data (original file without processing)
+patterns1 = extract_patterns_dirty("wiki_sample", list_of_patterns)
+
 
 
 
