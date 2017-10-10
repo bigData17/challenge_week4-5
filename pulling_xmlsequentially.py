@@ -7,9 +7,9 @@ context = etree.iterparse(infile, events=('end',), tag=('title', 'ns', 'id', 'te
 titles = open('titles.txt', 'w')
 namespaces = open('namespaces.txt', 'w')
 articles = open('articles.txt', 'w')
-ids = open('ids.txt', 'w')
+ids = open('ids.txt', 'w');              i = 0;
 for event, elem in context:
-    
+    print("Event number: ", i); i +1;
     #Adding page number
     #if i%7 == 0:
     #    out.write('%d\n' % int(i/7) )
@@ -20,7 +20,8 @@ for event, elem in context:
             titles.write('ERROR: No Title Content Found\n' )
         if elem.text.encode('utf-8'):
             titles.write('%s\n' % elem.text.encode('utf-8'))
-    
+            print(str(elem.text.encode('utf-8')))
+
     #Adding namespace
     if elem.tag == 'ns':
         if not elem.text.encode('utf-8'):
@@ -53,3 +54,4 @@ titles.close()
 namespaces.close()
 articles.close()
 ids.close()
+
