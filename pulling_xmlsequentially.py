@@ -9,7 +9,7 @@ namespaces = open('namespaces.txt', 'w')
 articles = open('articles.txt', 'w')
 ids = open('ids.txt', 'w');              i = 0;
 for event, elem in context:
-    print("Event number: ", i); i +1;
+    print("Event number: ", i); i = i +1;
     #Adding page number
     #if i%7 == 0:
     #    out.write('%d\n' % int(i/7) )
